@@ -22,10 +22,10 @@ To install the package, use the Unity Package Manager and follow the steps:
 
 1. Open Unity and go to `Window -> Package Manager`.
 2. Click on `+` and then `Add package from git URL...`.
-3. Enter the following URL: `https://github.com/readyio/com.unity.test-framework.git#1.1.33`.
+3. Enter the following URL: `https://github.com/readyio/com.unity.test-framework.git#1.3.7`.
 4. Click `Add`.
 
-You need Unity version 2019.2 or later to use this package.
+You need Unity version 2019.4 or later to use this package.
 
 ## Contributing
 
