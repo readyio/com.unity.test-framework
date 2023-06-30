@@ -97,7 +97,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
             }
 
             command = new EnumerableSetUpTearDownCommand(command);
-            command = new AsyncSetUpTearDownCommand(command);
             command = new OuterUnityTestActionCommand(command);
 
             IApplyToContext[] changes = test.Method.GetCustomAttributes<IApplyToContext>(true);
