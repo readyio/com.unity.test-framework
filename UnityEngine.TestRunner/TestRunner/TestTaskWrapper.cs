@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
@@ -18,21 +17,18 @@ namespace UnityEngine.TestTools.TestRunner
             m_TestMethod = testMethod;
         }
 
-        public IEnumerator Execute(ITestExecutionContext context)
+        public Task GetTask(ITestExecutionContext context)
         {
-            var task = HandleEnumerableTest(context);
-            while (!task.IsCompleted)
+            if (m_TestMethod.Method.ReturnType.Type == typeof(Task))
             {
-                yield return null;
+                return HandleAsyncTest(context);
             }
-
-            if (task.IsFaulted)
-            {
-                ExceptionDispatchInfo.Capture(task.Exception.InnerExceptions.Count == 1 ? task.Exception.InnerException : task.Exception).Throw();
-            }
+            var message = string.Format("Return type {0} of {1} in {2} is not supported.",
+                m_TestMethod.Method.ReturnType, m_TestMethod.Method.Name, m_TestMethod.Method.TypeInfo.FullName);
+            throw new InvalidSignatureException(message);
         }
 
-        private Task HandleEnumerableTest(ITestExecutionContext context)
+        private Task HandleAsyncTest(ITestExecutionContext context)
         {
             try
             {
