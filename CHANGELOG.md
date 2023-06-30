@@ -1,4 +1,53 @@
 # Changelog
+### [1.3.7] - 2023-06-07
+- The UTF version now automatically updates for SRP tests 
+
+## [1.3.6] - 2023-06-01
+- By using the editor command line new argument `-randomOrderSeed x` you can run the tests in a randomized order, where x is an integer different from 0. If a new test is added in the project the random order passing the same seed will be kept, and the new test will be placed in the random list accordigly.
+- Fix for WebGL platform target to close the browser tab when the run is completed. 
+- Added TestFileReferences.json to be generated on build step of the player, so can be consumed later by Test runners to enrich data for run part.
+
+## [1.3.5] - 2023-05-16
+- It’s now possible to retry and repeat tests on test level, meaning as soon as the test finishs running the first iteration, we now retry or repeat it.  Command line arguments to pass to the Editor:
+  -  `-repeat x` runs the test x amount of times or until it fails. It is useful for testing unstable tests 
+  -  `-retry x` if a test fails, run that test x amount of times or until it succeeds.
+- Fixed various documentation bugs reported via the docs user feedback system.
+- Added separate reference docs page for TestSettings options to distinguish them from regular command line arguments.
+- Fixed TestMode not being set correctly on root level of test tree (DSTP-674).
+- It's now possible to select browser for running WebGL player tests in player settings. (DSTR-811)
+
+## [1.3.4] - 2023-03-24
+- Fixes output message concurrency issue with async Setup.
+- Fixed multiple issues where tests would not time out, when running longer than the default timeout or the timeout defined in a TimeoutAttribute (DSTR-607).  
+- Added `UNITY_TEST_FRAMEWORK` define constraint to filter out test framework assemblies from normal platform and asset bundle builds. (DSTR-791)
+- Ensured that all playmode tests have a disabled splashscreen and unity logo by default if Unity license permits such action.
+- Added strictDomainReload feature to enable cheching for pending domain reloads/compilations at the end of managed tests (DSTR-793).
+
+## [1.3.3] - 2023-02-10
+- Fixes an issue where a test body would be skipped under certain conditions regarding domain reload.
+- Fixed an issue where the "uncategorized" category filter would not apply correctly to parameterized tests with a category in the fixture (DSTR-700).
+- Ensured that all samples can be loaded at once without assembly name collisions.
+
+## [1.3.2] - 2022-12-07
+- Fixed context not being restored after a domain reload outside tests (DSTR-678)
+- Fixed TestMode being set only in on the aseembly level (DSTP-674)
+- Fixed an issue where RunFinished callbacks sometimes would not be executed before the editor quits in batchmode (DSTR-692).
+- Fixed problem of samples not loading for import in Package Manager window. (DSTR-702)
+- Fixed issue GuiHelper depending on FilePath being abosolute. Updated to handle both cases.
+- Fixed an issue where ITestRunCallback are invoked double when run in EditMode.
+
+## [1.3.1] - 2022-10-18
+- Fixed an issue where TestFinished sometimes causes failures when receiving fixture test results from a player (internal).
+
+## [1.3.0] - 2022-10-11
+- Fixed Xcode not closing after building iOS/tvOS project via batchmode `-runTests` command (ANT-679).
+- Added TestSettings file options for setting `Target SDK` for iOS/tvOS (ANT-132).
+- Async test support with documentation and support for SetUp and TearDown.
+- Compute and share OneTimeSetup and OneTimeTearDown durations, these will be visible in the XML result under outputs (DSTR-597).
+- Made test method/fixture arguments available in the ITestAdaptor as the `Arguments` property (DSTR-592).
+- Added Learn Unity Test Framework section of documentation and related project files as importable package samples (DOCES-558).
+- Fix NullReferenceException when yielding EditMode intructions in PlayMode tests (DSTR-622).
+
 ## [1.1.33] - 2022-07-12
 - Fixed an issue where using Assert.Expect with the same string multiple times can lead to incorrect errors in some cases (DSTR-442).
 - Improved the logging when using multiple Assert.Expect that the logs appear in another order than expected (DSTR-442).

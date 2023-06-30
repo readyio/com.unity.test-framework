@@ -12,8 +12,8 @@ namespace UnityEngine.TestTools
 {
     internal class EnumerableSetUpTearDownCommand : BeforeAfterTestCommandBase<MethodInfo>
     {
-        static readonly Dictionary<Type, List<MethodInfo>> m_BeforeActionsCache = new Dictionary<Type, List<MethodInfo>>();
-        static readonly Dictionary<Type, List<MethodInfo>> m_AfterActionsCache = new Dictionary<Type, List<MethodInfo>>();
+        private static readonly Dictionary<Type, List<MethodInfo>> m_BeforeActionsCache = new Dictionary<Type, List<MethodInfo>>();
+        private static readonly Dictionary<Type, List<MethodInfo>> m_AfterActionsCache = new Dictionary<Type, List<MethodInfo>>();
 
         public EnumerableSetUpTearDownCommand(TestCommand innerCommand)
             : base(innerCommand, "SetUp", "TearDown")
@@ -22,8 +22,8 @@ namespace UnityEngine.TestTools
             {
                 if (Test.TypeInfo.Type != null)
                 {
-                    BeforeActions = GetActions(m_BeforeActionsCache, Test.TypeInfo.Type, typeof(UnitySetUpAttribute), typeof(IEnumerator));
-                    AfterActions = GetActions(m_AfterActionsCache, Test.TypeInfo.Type, typeof(UnityTearDownAttribute), typeof(IEnumerator)).Reverse().ToArray();
+                    BeforeActions = GetActions(m_BeforeActionsCache, Test.TypeInfo.Type, typeof(UnitySetUpAttribute), new[] {typeof(IEnumerator)});
+                    AfterActions = GetActions(m_AfterActionsCache, Test.TypeInfo.Type, typeof(UnityTearDownAttribute), new[] {typeof(IEnumerator)}).Reverse().ToArray();
                 }
             }
         }

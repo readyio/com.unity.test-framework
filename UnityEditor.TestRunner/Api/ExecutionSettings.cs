@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+using System.Text;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal.Filters;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.TestRunner.NUnitExtensions.Runner;
 
 namespace UnityEditor.TestTools.TestRunner.Api
 {
@@ -53,7 +56,19 @@ namespace UnityEditor.TestTools.TestRunner.Api
 
         [SerializeField]
         internal string[] orderedTestNames;
+
+        [SerializeField]
+        internal IgnoreTest[] ignoreTests;
+
+        [SerializeField]
+        internal FeatureFlags featureFlags;
+
+        [SerializeField]
+        internal int randomOrderSeed;
+
         internal string playerSavePath { get; set; }
+        internal int retryCount { get; set; }
+        internal int repeatCount { get; set; }
 
         internal bool EditModeIncluded()
         {
@@ -101,6 +116,66 @@ namespace UnityEditor.TestTools.TestRunner.Api
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Implementation of ToString() that builds a string composed of the execution settings.
+        /// </summary>
+        /// <returns>The current execution settings as a string.</returns>
+        public override string ToString()
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"{nameof(ExecutionSettings)} with details:");
+            stringBuilder.AppendLine($"{nameof(targetPlatform)} = {targetPlatform}");
+            stringBuilder.AppendLine($"{nameof(playerHeartbeatTimeout)} = {playerHeartbeatTimeout}");
+
+            if (filters.Length == 0)
+            {
+                stringBuilder.AppendLine($"{nameof(filters)} = {{}}");
+            }
+
+            for (int i = 0; i < filters.Length; i++)
+            {
+                stringBuilder.AppendLine($"{nameof(filters)}[{i}] = ");
+                var filterStrings = filters[i]
+                    .ToString()
+                    .Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries)
+                    .ToArray();
+
+                foreach (var filterString in filterStrings)
+                {
+                    stringBuilder.AppendLine($"   {filterString}");
+                }
+            }
+
+            if (ignoreTests == null || ignoreTests.Length == 0)
+            {
+                stringBuilder.AppendLine($"{nameof(ignoreTests)} = {{}}");
+            }
+            else
+            {
+                for (int i = 0; i < ignoreTests.Length; i++)
+                {
+                    stringBuilder.AppendLine($"{nameof(ignoreTests)}[{i}] = {ignoreTests[i]}");
+                }
+            }
+
+            if (featureFlags == null)
+            {
+                stringBuilder.AppendLine($"{nameof(featureFlags)} = null");
+            }
+            else
+            {
+                stringBuilder.AppendLine("Feature Flags:");
+                stringBuilder.AppendLine($"  {nameof(featureFlags.fileCleanUpCheck)} = {featureFlags.fileCleanUpCheck}");
+				stringBuilder.AppendLine($"  {nameof(featureFlags.requiresSplashScreen)} = {featureFlags.requiresSplashScreen}");
+				stringBuilder.AppendLine($"  {nameof(featureFlags.strictDomainReload)} = {featureFlags.strictDomainReload}");
+            }
+
+
+            stringBuilder.AppendLine();
+
+            return stringBuilder.ToString();
         }
     }
 }

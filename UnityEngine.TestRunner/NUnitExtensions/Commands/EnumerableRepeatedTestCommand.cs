@@ -12,10 +12,10 @@ namespace UnityEngine.TestTools
     internal class EnumerableRepeatedTestCommand : DelegatingTestCommand, IEnumerableTestMethodCommand
     {
         private int repeatCount;
-        
+
         public EnumerableRepeatedTestCommand(RepeatAttribute.RepeatedTestCommand commandToReplace) : base(commandToReplace.GetInnerCommand())
         {
-            repeatCount = (int) typeof(RepeatAttribute.RepeatedTestCommand)
+            repeatCount = (int)typeof(RepeatAttribute.RepeatedTestCommand)
                 .GetField("repeatCount", BindingFlags.NonPublic | BindingFlags.Instance)
                 .GetValue(commandToReplace);
         }
@@ -28,10 +28,6 @@ namespace UnityEngine.TestTools
         public IEnumerable ExecuteEnumerable(ITestExecutionContext context)
         {
             var unityContext = (UnityTestExecutionContext)context;
-            if (unityContext.EnumerableTestState?.GetHashCode() == null)
-            {
-                unityContext.EnumerableTestState = new EnumerableTestState();
-            }
             int count = unityContext.EnumerableTestState.Repeat;
             var firstCycleAfterResume = count > 0;
 
@@ -44,7 +40,7 @@ namespace UnityEngine.TestTools
 
                 firstCycleAfterResume = false;
                 unityContext.EnumerableTestState.Repeat = count;
-                
+
                 if (innerCommand is IEnumerableTestMethodCommand)
                 {
                     var executeEnumerable = ((IEnumerableTestMethodCommand)innerCommand).ExecuteEnumerable(context);

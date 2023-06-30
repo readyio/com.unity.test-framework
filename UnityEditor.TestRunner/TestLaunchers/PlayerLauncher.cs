@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using NUnit.Framework.Internal.Filters;
-using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEditor.TestRunner.TestLaunchers;
 using UnityEditor.TestTools.TestRunner.Api;
@@ -13,6 +11,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestRunner.Utils;
 using UnityEngine.TestTools.TestRunner;
 using UnityEngine.TestTools.TestRunner.Callbacks;
+using Object = UnityEngine.Object;
 
 namespace UnityEditor.TestTools.TestRunner
 {
@@ -76,8 +75,9 @@ namespace UnityEditor.TestTools.TestRunner
                 var playerBuildOptions = GetBuildOptions(scenePath);
 
                 var success = BuildAndRunPlayer(playerBuildOptions);
-                
+
                 editorConnectionTestCollector.PostBuildAction();
+                FilePathMetaInfo.TryCreateFile(runner.LoadedTest, playerBuildOptions.BuildPlayerOptions);
                 ExecutePostBuildCleanupMethods(runner.LoadedTest, filter);
 
                 ReopenOriginalScene(m_Settings.originalScene);
@@ -86,7 +86,7 @@ namespace UnityEditor.TestTools.TestRunner
                 if (!success)
                 {
                     editorConnectionTestCollector.CleanUp();
-                    ScriptableObject.DestroyImmediate(editorConnectionTestCollector);
+                    Object.DestroyImmediate(editorConnectionTestCollector);
                     Debug.LogError("Player build failed");
                     throw new TestLaunchFailedException("Player build failed");
                 }
@@ -135,16 +135,34 @@ namespace UnityEditor.TestTools.TestRunner
             }
 #endif
             // For now, so does Lumin
+#if !UNITY_2023_1_OR_NEWER            
             if (buildOptions.BuildPlayerOptions.target == BuildTarget.Lumin)
             {
                 buildOptions.BuildPlayerOptions.options &= ~BuildOptions.ConnectToHost;
             }
+#endif
+
+#if UNITY_2023_2_OR_NEWER
+            // WebGL has to be in close on quit mode to ensure that the browser tab is closed when the player finishes running tests
+            if (buildOptions.BuildPlayerOptions.target == BuildTarget.WebGL)
+            {
+                PlayerSettings.WebGL.closeOnQuit = true;
+            }
+#endif
 
             var result = BuildPipeline.BuildPlayer(buildOptions.BuildPlayerOptions);
-            if (result.summary.result != Build.Reporting.BuildResult.Succeeded)
+            if (result.summary.result != BuildResult.Succeeded)
                 Debug.LogError(result.SummarizeErrors());
 
-            return result.summary.result == Build.Reporting.BuildResult.Succeeded;
+#if UNITY_2023_2_OR_NEWER
+            // Clean up WebGL close on quit mode
+            if (buildOptions.BuildPlayerOptions.target == BuildTarget.WebGL)
+            {
+                PlayerSettings.WebGL.closeOnQuit = false;
+            }
+#endif
+
+            return result.summary.result == BuildResult.Succeeded;
         }
 
         internal PlayerLauncherBuildOptions GetBuildOptions(string scenePath)
@@ -158,7 +176,7 @@ namespace UnityEditor.TestTools.TestRunner
 
             var buildOptions = new BuildPlayerOptions();
 
-            var scenes = new List<string>() { scenePath };
+            var scenes = new List<string> { scenePath };
             scenes.AddRange(EditorBuildSettings.scenes.Select(x => x.path));
             buildOptions.scenes = scenes.ToArray();
 
@@ -202,7 +220,7 @@ namespace UnityEditor.TestTools.TestRunner
                 var reduceBuildLocationPathLength = false;
 
                 //Some platforms hit MAX_PATH limits during the build process, in these cases minimize the path length
-                if ((m_TargetPlatform == BuildTarget.WSAPlayer) 
+                if ((m_TargetPlatform == BuildTarget.WSAPlayer)
 #if !UNITY_2021_1_OR_NEWER
                 || (m_TargetPlatform == BuildTarget.XboxOne)
 #endif
@@ -264,7 +282,7 @@ namespace UnityEditor.TestTools.TestRunner
 
             return buildOptions;
         }
-        
+
         private static bool ShouldReduceBuildLocationPathLength(BuildTarget target)
         {
             switch (target)

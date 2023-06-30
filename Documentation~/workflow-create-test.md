@@ -28,7 +28,7 @@ To create another set of tests:
 3. In the **Project** window, select the new folder.
 4. Create a new test script in the folder (menu: **Assets > Create > Testing > C# Test Script**).
 
-The assembly definition is assigned the same name as your new asset. To rename it, change the **Name** in the **Insepctor** window. Assembly definition names must be unique.
+The assembly definition is assigned the same name as your new asset. To rename it, change the **Name** in the **Inspector** window. Assembly definition names must be unique.
 
 > **Note**: Changing the file name of the assembly definition file does not affect the value of the **Name** property in the file. Use the **Inspector** window to make sure the name is properly changed.
 

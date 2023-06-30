@@ -3,16 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Threading;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Commands;
 using NUnit.Framework.Internal.Execution;
-using UnityEngine.TestTools;
 using UnityEngine.TestTools.Logging;
-using UnityEngine.TestTools.TestRunner;
-using CountdownEvent = System.Threading.CountdownEvent;
 
 namespace UnityEngine.TestRunner.NUnitExtensions.Runner
 {
@@ -23,10 +20,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
         private readonly ITestFilter _childFilter;
         private TestCommand _setupCommand;
         private TestCommand _teardownCommand;
-        private MethodInfo[] _unitySetupMethods;
-        private MethodInfo[] _unityTeardownMethods;
-        private MethodInfo[] _asyncSetupMethods;
-        private MethodInfo[] _asyncTeardownMethods;
 
         public List<UnityWorkItem> Children { get; private set; }
 
@@ -73,12 +66,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
                                     //If we do not, the objects could be automatically destroyed when exiting playmode and could result in errors later on
                                     yield return null;
                                     PerformOneTimeSetUp();
-                                    if (_unitySetupMethods != null)
-                                        foreach (var method in _unitySetupMethods)
-                                            yield return TryEnumerator(Reflect.InvokeMethod(method, Context.TestObject) as IEnumerator);
-                                    if (_asyncSetupMethods != null)
-                                        foreach (var method in _asyncSetupMethods)
-                                            yield return WaitForTask(Reflect.InvokeMethod(method, Context.TestObject) as Task);
                                 }
 
                                 if (!CheckForCancellation())
@@ -106,12 +93,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
 
                                 if (Context.ExecutionStatus != TestExecutionStatus.AbortRequested && !m_DontRunRestoringResult)
                                 {
-                                    if (_asyncTeardownMethods != null)
-                                        foreach (var method in _asyncTeardownMethods)
-                                            yield return WaitForTask(Reflect.InvokeMethod(method, Context.TestObject) as Task);
-                                    if (_unityTeardownMethods != null)
-                                        foreach (var method in _unityTeardownMethods)
-                                            yield return TryEnumerator(Reflect.InvokeMethod(method, Context.TestObject) as IEnumerator);
                                     PerformOneTimeTearDown();
                                 }
                             }
@@ -170,22 +151,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
 
             _setupCommand = CommandBuilder.MakeOneTimeSetUpCommand(_suite, setUpTearDownItems, actionItems);
             _teardownCommand = CommandBuilder.MakeOneTimeTearDownCommand(_suite, setUpTearDownItems, actionItems);
-
-            if (_suite.TypeInfo != null)
-            {
-                _unitySetupMethods = Reflect
-                    .GetMethodsWithAttribute(_suite.TypeInfo.Type, typeof(UnityOneTimeSetUpAttribute), true)
-                    .Where(m => m.ReturnType == typeof(IEnumerator)).ToArray();
-                _unityTeardownMethods = Reflect
-                    .GetMethodsWithAttribute(_suite.TypeInfo.Type, typeof(UnityOneTimeTearDownAttribute), true)
-                    .Where(m => m.ReturnType == typeof(IEnumerator)).Reverse().ToArray();
-                _asyncSetupMethods = Reflect
-                    .GetMethodsWithAttribute(_suite.TypeInfo.Type, typeof(AsyncOneTimeSetUpAttribute), true)
-                    .Where(m => m.ReturnType == typeof(Task)).ToArray();
-                _asyncTeardownMethods = Reflect
-                    .GetMethodsWithAttribute(_suite.TypeInfo.Type, typeof(AsyncOneTimeTearDownAttribute), true)
-                    .Where(m => m.ReturnType == typeof(Task)).Reverse().ToArray();
-            }
         }
 
         private void PerformOneTimeSetUp()
@@ -299,7 +264,7 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
         private void SkipFixture(ResultState resultState, string message, string stackTrace)
         {
             Result.SetResult(resultState.WithSite(FailureSite.SetUp), message, StackFilter.Filter(stackTrace));
-            SkipChildren(_suite, resultState.WithSite(FailureSite.Parent), "OneTimeSetUp: " + message);
+            SkipChildren(_suite, resultState.WithSite(FailureSite.Parent), message);
         }
 
         private void SkipChildren(TestSuite suite, ResultState resultState, string message)
@@ -361,7 +326,7 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
                 foreach (var childResult in _suiteResult.Children)
                     if (childResult.ResultState == ResultState.Cancelled)
                     {
-                        this.Result.SetResult(ResultState.Cancelled, "Cancelled by user");
+                        Result.SetResult(ResultState.Cancelled, "Cancelled by user");
                         break;
                     }
 
@@ -382,37 +347,6 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
 
                 if (child.State == WorkItemState.Running)
                     child.Cancel(force);
-            }
-        }
-
-        private IEnumerator WaitForTask(Task task)
-        {
-            while (!task.IsCompleted)
-                yield return null;
-
-            if (task.IsFaulted)
-                Context.CurrentResult.RecordException(task.Exception);
-        }
-        
-        private IEnumerator TryEnumerator(IEnumerator enumerator)
-        {
-            while (true)
-            {
-                try
-                {
-                    if (!enumerator.MoveNext())
-                        break;
-                }
-                catch (Exception ex)
-                {
-                    Context.CurrentResult.RecordException(ex);
-                    break;
-                }
-
-                if (enumerator.Current is IEnumerator nestedEnumerator)
-                    yield return TryEnumerator(nestedEnumerator);
-                else
-                    yield return enumerator.Current;
             }
         }
     }

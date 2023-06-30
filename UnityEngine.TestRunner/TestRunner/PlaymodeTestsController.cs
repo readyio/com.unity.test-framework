@@ -16,6 +16,8 @@ namespace UnityEngine.TestTools.TestRunner
     {
         private IEnumerator m_TestSteps;
 
+        public static PlaymodeTestsController ActiveController { get; private set; }
+
         [SerializeField]
         private List<string> m_AssembliesWithTests;
         public List<string> AssembliesWithTests
@@ -39,6 +41,7 @@ namespace UnityEngine.TestTools.TestRunner
         [SerializeField]
         internal RunFinishedEvent runFinishedEvent = new RunFinishedEvent();
 
+        //DO NOT change this string, third party code is using this string to identify the test runner game object.
         internal const string kPlaymodeTestControllerName = "Code-based tests runner";
 
         [SerializeField]
@@ -48,6 +51,14 @@ namespace UnityEngine.TestTools.TestRunner
 
         public IEnumerator Start()
         {
+            UnityTestExecutionContext.CurrentContext = new UnityTestExecutionContext()
+            {
+                FeatureFlags = settings.featureFlags,
+                RetryCount = settings.retryCount,
+                RepeatCount = settings.repeatCount,
+                Automated = settings.automated
+            };
+            ActiveController = this;
             //Skip 2 frame because Unity.
             yield return null;
             yield return null;
@@ -74,7 +85,6 @@ namespace UnityEngine.TestTools.TestRunner
             if (m_Runner.IsTestComplete)
             {
                 runFinishedEvent.Invoke(m_Runner.Result);
-                Cleanup();
 
                 yield return null;
             }
@@ -92,7 +102,7 @@ namespace UnityEngine.TestTools.TestRunner
             }
 
             var testListUtil = new PlayerTestAssemblyProvider(new AssemblyLoadProxy(), m_AssembliesWithTests);
-            m_Runner = new UnityTestAssemblyRunner(new UnityTestAssemblyBuilder(settings.orderedTestNames), new PlaymodeWorkItemFactory());
+            m_Runner = new UnityTestAssemblyRunner(new UnityTestAssemblyBuilder(settings.orderedTestNames, settings.randomOrderSeed), new PlaymodeWorkItemFactory(), UnityTestExecutionContext.CurrentContext);
 
             var loadedTests = m_Runner.Load(testListUtil.GetUserAssemblies().Select(a => a.Assembly).ToArray(), TestPlatform.PlayMode, UnityTestAssemblyBuilder.GetNUnitTestBuilderSettings(TestPlatform.PlayMode));
             loadedTests.ParseForNameDuplicates();
@@ -113,7 +123,14 @@ namespace UnityEngine.TestTools.TestRunner
             }
             if (Application.isEditor)
             {
-                Destroy(gameObject);
+                if (Application.isPlaying)
+                {
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(gameObject);
+                }
             }
         }
 

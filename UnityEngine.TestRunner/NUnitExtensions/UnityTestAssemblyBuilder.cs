@@ -14,10 +14,11 @@ namespace UnityEngine.TestTools.NUnitExtensions
     {
         private readonly string m_ProductName;
         private readonly ITestSuiteModifier[] m_TestSuiteModifiers;
-        public UnityTestAssemblyBuilder(string[] orderedTestNames)
+
+        public UnityTestAssemblyBuilder(string[] orderedTestNames, int randomSeed)
         {
-            m_TestSuiteModifiers = orderedTestNames != null && orderedTestNames.Length > 0
-                ? new ITestSuiteModifier[] {new OrderedTestSuiteModifier(orderedTestNames)}
+            m_TestSuiteModifiers = (orderedTestNames != null && orderedTestNames.Length > 0) || randomSeed != 0
+                ? new ITestSuiteModifier[] {new OrderedTestSuiteModifier(orderedTestNames, randomSeed)}
                 : new ITestSuiteModifier[0];
             m_ProductName = Application.productName;
         }
@@ -40,18 +41,19 @@ namespace UnityEngine.TestTools.NUnitExtensions
             {
                 var assembly = assemblies[index];
                 var platform = testPlatforms[index];
-                
+
                 var assemblySuite = Build(assembly, options) as TestSuite;
                 if (assemblySuite != null && assemblySuite.HasChildren)
                 {
-                    assemblySuite.Properties.Set("platform", platform);
                     suite.Add(assemblySuite);
+                    suite.ApplyPlatformToPropertyBag(platform);
                 }
 
                 yield return null;
             }
-            
+
             suite.ParseForNameDuplicates();
+            suite.Properties.Set("platform", testPlatforms.MergeFlags());
 
             foreach (var testSuiteModifier in m_TestSuiteModifiers)
             {

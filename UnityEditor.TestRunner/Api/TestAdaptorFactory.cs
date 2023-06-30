@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework.Interfaces;
@@ -12,11 +13,15 @@ namespace UnityEditor.TestTools.TestRunner.Api
         private Dictionary<string, TestResultAdaptor> m_TestResultAdaptorCache = new Dictionary<string, TestResultAdaptor>();
         public ITestAdaptor Create(ITest test)
         {
-            var uniqueName = test.GetUniqueName();
-            var elementIsModified = test.Properties.ContainsKey(OrderedTestSuiteModifier.suiteIsReorderedProperty);
-            if (!elementIsModified && m_TestAdaptorCache.ContainsKey(uniqueName))
+            var cacheKey = string.Concat(test.GetUniqueName(),test.Properties.Get("platform"));
+            if (test.Properties.ContainsKey("platform"))
             {
-                return m_TestAdaptorCache[uniqueName];
+                cacheKey = string.Concat(cacheKey, test.Properties.Get("platform"));
+            }
+            var elementIsModified = test.Properties.ContainsKey(OrderedTestSuiteModifier.suiteIsReorderedProperty);
+            if (!elementIsModified && m_TestAdaptorCache.ContainsKey(cacheKey))
+            {
+                return m_TestAdaptorCache[cacheKey];
             }
 
             var adaptor = new TestAdaptor(test, test.Tests.Select(Create).ToArray());
@@ -24,10 +29,10 @@ namespace UnityEditor.TestTools.TestRunner.Api
             {
                 (child as TestAdaptor).SetParent(adaptor);
             }
-            
+
             if (!elementIsModified)
             {
-                m_TestAdaptorCache[uniqueName] = adaptor;
+                m_TestAdaptorCache[cacheKey] = adaptor;
             }
             return adaptor;
         }
@@ -39,13 +44,13 @@ namespace UnityEditor.TestTools.TestRunner.Api
 
         public ITestResultAdaptor Create(ITestResult testResult)
         {
-            var uniqueName = testResult.Test.GetUniqueName();
-            if (m_TestResultAdaptorCache.ContainsKey(uniqueName))
+            var cacheKey = string.Join(";", testResult.Test.GetUniqueName(), testResult.Test.GetRetryIteration(), testResult.Test.GetRepeatIteration());
+            if (m_TestResultAdaptorCache.ContainsKey(cacheKey))
             {
-                return m_TestResultAdaptorCache[uniqueName];
+                return m_TestResultAdaptorCache[cacheKey];
             }
             var adaptor = new TestResultAdaptor(testResult, Create(testResult.Test), testResult.Children.Select(Create).ToArray());
-            m_TestResultAdaptorCache[uniqueName] = adaptor;
+            m_TestResultAdaptorCache[cacheKey] = adaptor;
             return adaptor;
         }
 

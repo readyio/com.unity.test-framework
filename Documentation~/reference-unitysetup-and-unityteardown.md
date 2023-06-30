@@ -30,7 +30,7 @@ public class SetUpTearDownExample
 
 ## Execution order
 
-`UnitySetUp` and `UnityTearDown` can be used with either the `Test` or `UnityTest` test attributes. In both cases the relative execution order of Unity and non-Unity `SetUp` and `TearDown` attributes is the same. The only difference is that a `UnityTest` allows for yielding instructions during the test that can result in a domain reload, in which case the non-Unity `SetUp` and `TearDown` methods are re-run before proceeding to the second part of the test.
+`UnitySetUp` and `UnityTearDown` can be used with either the `Test` or `UnityTest` test attributes. In both cases the relative execution order of Unity and non-Unity `SetUp` and `TearDown` attributes is the same. The only difference is that a `UnityTest` allows for yielding instructions during the test that can result in a domain reload, in which case the non-Unity `SetUp` methods are re-run before proceeding to the second part of the test.
 
 ![SetUp and TearDown Execution Order](./images/execution-order-unitysetup-teardown.svg)
 

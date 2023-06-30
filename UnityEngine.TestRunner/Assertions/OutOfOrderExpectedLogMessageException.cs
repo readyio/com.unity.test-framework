@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using UnityEngine.TestTools.Logging;
@@ -13,7 +14,7 @@ namespace UnityEngine.TestTools.TestRunner
 
         private static string BuildMessage(LogEvent log, LogMatch nextExpected)
         {
-            return $"Expected {log.LogType} with '{log.Message}' arrived out of order. Expected {nextExpected.LogType} with '{nextExpected.Message}' next.";
+            return $"Expected {log.LogType} with '{log.Message}' arrived out of order. Expected '{nextExpected}' next.";
         }
 
         public override ResultState ResultState

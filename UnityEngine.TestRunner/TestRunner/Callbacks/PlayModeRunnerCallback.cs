@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 
@@ -10,7 +11,7 @@ namespace UnityEngine.TestTools.TestRunner.Callbacks
 
         public void RunFinished(ITestResult testResults)
         {
-            Application.logMessageReceivedThreaded -= LogRecieved;
+            Application.logMessageReceived -= LogRecieved;
             if (Camera.main == null)
             {
                 gameObject.AddComponent<Camera>();
@@ -31,7 +32,7 @@ namespace UnityEngine.TestTools.TestRunner.Callbacks
 
         public void RunStarted(ITest testsToRun)
         {
-            Application.logMessageReceivedThreaded += LogRecieved;
+            Application.logMessageReceived += LogRecieved;
         }
 
         public void TestStarted(ITest test)

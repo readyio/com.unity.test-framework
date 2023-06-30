@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
-using System.Threading;
 using UnityEditor.TestTools.TestRunner.CommandLineTest;
 using UnityEditor.TestTools.TestRunner.TestRun;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.TestRunner.NUnitExtensions.Runner;
 using UnityEngine.TestRunner.TestLaunchers;
 using UnityEngine.TestTools;
 using UnityEngine.TestTools.NUnitExtensions;
@@ -12,7 +13,7 @@ namespace UnityEditor.TestTools.TestRunner.Api
 {
     /// <summary>
     /// The TestRunnerApi retrieves and runs tests programmatically from code inside the project, or inside other packages. TestRunnerApi is a [ScriptableObject](https://docs.unity3d.com/ScriptReference/ScriptableObject.html).
-    ///You can initialize the API like this:
+    /// You can initialize the API like this:
     /// <code>
     /// var testRunnerApi = ScriptableObject.CreateInstance&lt;TestRunnerApi&gt;();
     /// </code>
@@ -24,22 +25,28 @@ namespace UnityEditor.TestTools.TestRunner.Api
     /// </summary>
     public class TestRunnerApi : ScriptableObject, ITestRunnerApi
     {
-        internal ICallbacksHolder callbacksHolder;
-
-        private ICallbacksHolder m_CallbacksHolder
+        internal static ICallbacksHolder callbacksHolder;
+        private static ICallbacksHolder CallbacksHolder
         {
             get
             {
                 if (callbacksHolder == null)
                 {
-                    return CallbacksHolder.instance;
+                    callbacksHolder = Api.CallbacksHolder.instance;
                 }
 
                 return callbacksHolder;
             }
         }
 
-        internal Func<ExecutionSettings,string> ScheduleJob = (executionSettings) =>
+        internal static ITestJobDataHolder testJobDataHolder;
+
+        private static ITestJobDataHolder m_testJobDataHolder
+        {
+            get { return testJobDataHolder ?? (testJobDataHolder = TestJobDataHolder.instance); }
+        }
+
+        internal Func<ExecutionSettings,string> ScheduleJob = executionSettings =>
         {
             var runner = new TestJobRunner();
             return runner.RunJob(new TestJobData(executionSettings));
@@ -59,13 +66,18 @@ namespace UnityEditor.TestTools.TestRunner.Api
             if ((executionSettings.filters == null || executionSettings.filters.Length == 0) && executionSettings.filter != null)
             {
                 // Map filter (singular) to filters (plural), for backwards compatibility.
-                executionSettings.filters = new [] {executionSettings.filter};
+                executionSettings.filters = new[] { executionSettings.filter };
             }
 
             if (executionSettings.targetPlatform == null && executionSettings.filters != null &&
                 executionSettings.filters.Length > 0)
             {
                 executionSettings.targetPlatform = executionSettings.filters[0].targetPlatform;
+            }
+
+            if (executionSettings.featureFlags == null)
+            {
+                executionSettings.featureFlags = new FeatureFlags();
             }
 
             return ScheduleJob(executionSettings);
@@ -85,13 +97,29 @@ namespace UnityEditor.TestTools.TestRunner.Api
         /// </param>
         public void RegisterCallbacks<T>(T testCallbacks, int priority = 0) where T : ICallbacks
         {
+            RegisterTestCallback(testCallbacks, priority);
+        }
+
+        /// <summary>
+        /// Sets up a given instance of <see cref="ICallbacks"/> to be invoked on test runs.
+        /// </summary>
+        /// <typeparam name="T">
+        /// Generic representing a type of callback.
+        /// </typeparam>
+        /// <param name="testCallbacks">The test callbacks to be invoked</param>
+        /// <param name="priority">
+        /// Sets the order in which the callbacks are invoked, starting with the highest value first.
+        /// </param>
+        public static void RegisterTestCallback<T>(T testCallbacks, int priority = 0) where T : ICallbacks
+        {
             if (testCallbacks == null)
             {
                 throw new ArgumentNullException(nameof(testCallbacks));
             }
 
-            m_CallbacksHolder.Add(testCallbacks, priority);
+            CallbacksHolder.Add(testCallbacks, priority);
         }
+
         /// <summary>
         /// Unregister an instance of <see cref="ICallbacks"/> to no longer receive callbacks from test runs.
         /// </summary>
@@ -101,12 +129,24 @@ namespace UnityEditor.TestTools.TestRunner.Api
         /// <param name="testCallbacks">The test callbacks to unregister.</param>
         public void UnregisterCallbacks<T>(T testCallbacks) where T : ICallbacks
         {
+            UnregisterTestCallback(testCallbacks);
+        }
+
+        /// <summary>
+        /// Unregister an instance of <see cref="ICallbacks"/> to no longer receive callbacks from test runs.
+        /// </summary>
+        /// <typeparam name="T">
+        /// Generic representing a type of callback.
+        /// </typeparam>
+        /// <param name="testCallbacks">The test callbacks to unregister.</param>
+        public static void UnregisterTestCallback<T>(T testCallbacks) where T : ICallbacks
+        {
             if (testCallbacks == null)
             {
                 throw new ArgumentNullException(nameof(testCallbacks));
             }
 
-            m_CallbacksHolder.Remove(testCallbacks);
+            CallbacksHolder.Remove(testCallbacks);
         }
 
         internal void RetrieveTestList(ExecutionSettings executionSettings, Action<ITestAdaptor> callback)
@@ -115,7 +155,7 @@ namespace UnityEditor.TestTools.TestRunner.Api
             {
                 throw new ArgumentNullException(nameof(executionSettings));
             }
-            
+
             var firstFilter = executionSettings.filters?.FirstOrDefault() ?? executionSettings.filter;
             RetrieveTestList(firstFilter.testMode, callback);
         }
@@ -135,24 +175,44 @@ namespace UnityEditor.TestTools.TestRunner.Api
             var testAssemblyProvider = new EditorLoadedTestAssemblyProvider(new EditorCompilationInterfaceProxy(), new EditorAssembliesProxy());
             var testAdaptorFactory = new TestAdaptorFactory();
             var testListCache = new TestListCache(testAdaptorFactory, new RemoteTestResultDataFactory(), TestListCacheData.instance);
-            var testListProvider = new TestListProvider(testAssemblyProvider, new UnityTestAssemblyBuilder(null));
+            var testListProvider = new TestListProvider(testAssemblyProvider, new UnityTestAssemblyBuilder(null, 0));
             var cachedTestListProvider = new CachingTestListProvider(testListProvider, testListCache, testAdaptorFactory);
 
-            var job = new TestListJob(cachedTestListProvider, platform, (testRoot) =>
+            var job = new TestListJob(cachedTestListProvider, platform, testRoot =>
             {
                 callback(testRoot);
             });
             job.Start();
         }
 
+        /// <summary>
+        /// Cancel the test run with a given guid. The guid can be retrieved when executing the test run. Currently only supports EditMode tests.
+        /// </summary>
+        /// <param name="guid">Test run GUID.</param>
+        /// <returns></returns>
+        internal static bool CancelTestRun(string guid)
+        {
+            var runner = m_testJobDataHolder.GetRunner(guid);
+            if (runner == null || !runner.IsRunningJob())
+            {
+                return false;
+            }
+
+            return runner.CancelRun();
+        }
+
         internal static bool IsRunActive()
         {
-            return RunData.instance.isRunning;
+            return m_testJobDataHolder.GetAllRunners().Any(r => r.GetData().isRunning);
         }
 
         private static TestPlatform ParseTestMode(TestMode testMode)
         {
             return (((testMode & TestMode.EditMode) == TestMode.EditMode) ? TestPlatform.EditMode : 0) | (((testMode & TestMode.PlayMode) == TestMode.PlayMode) ? TestPlatform.PlayMode : 0);
         }
+
+        internal class RunProgressChangedEvent : UnityEvent<TestRunProgress> {}
+        internal static RunProgressChangedEvent runProgressChanged = new RunProgressChangedEvent();
+
     }
 }

@@ -12,14 +12,14 @@ namespace UnityEditor.TestTools
         /// <summary>
         /// Initializes and returns an instance of TestPlayerBuildModifierAttribute or throws an <see cref="ArgumentException"/>.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="type">A target type that implements ITestPlayerBuildModifier.</param>
         /// <exception cref="ArgumentException">Throws a <see cref="ArgumentException"/> if the type provided does not implemented the `ITestPlayerBuildModifier` interface. </exception>
         public TestPlayerBuildModifierAttribute(Type type)
         {
             var interfaceType = typeof(ITestPlayerBuildModifier);
             if (!interfaceType.IsAssignableFrom(type))
             {
-                throw new ArgumentException(string.Format("Type provided to {0} does not implement {1}", this.GetType().Name, interfaceType.Name));
+                throw new ArgumentException(string.Format("Type provided to {0} does not implement {1}", GetType().Name, interfaceType.Name));
             }
             m_Type = type;
         }
@@ -30,4 +30,3 @@ namespace UnityEditor.TestTools
         }
     }
 }
-

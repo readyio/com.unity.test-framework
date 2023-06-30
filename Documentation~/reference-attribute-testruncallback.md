@@ -43,4 +43,4 @@ public class MyTestRunCallback : ITestRunCallback
 
 ```
 
-> **Note:** The `TestRunCallback` does not need any references to the `UnityEditor` namespace and is thus able to run in standalone Players, on the **Player** side.
+> **Note:** The `TestRunCallback` does not need any references to the `UnityEditor` namespace and is thus able to run in standalone Players, on the **Player** side. Note also that `TestRunCallback` is part of the runtime code and should not be confused with `iCallbacks` which are part of the [TestRunnerApi](./reference-test-runner-api.md). If you want to receive callbacks for tests run programmatically through the TestRunnerApi, see [iCallbacks](./reference-icallbacks.md). 

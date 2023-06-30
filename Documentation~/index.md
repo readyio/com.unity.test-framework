@@ -10,9 +10,9 @@ UTF uses a Unity integration of NUnit library, which is an open-source unit test
 
 # Installing Unity Test Framework
 
-To install this package, follow the instructions in the [Package Manager documentation](https://docs.unity3d.com/Packages/com.unity.package-manager-ui@latest/index.html).
+The Test Framework package is shipped with the Unity Editor and should be automatically included in any project created with Unity 2019.2 or later. If you need to install the package manually, you can do so in any of the standard ways documented in the [Package Manager documentation](https://docs.unity3d.com/Packages/com.unity.package-manager-ui@latest/index.html).
 
-> **Note**: Search for the Test Framework package. In Unity 2019.2 and higher, you may need to enable the package before use. 
+> **Note**: If you're adding the package by name, the canonical name to use is `com.unity.test-framework`. If you're adding it from the registry, the package is listed under the display name `Test Framework`. 
 
 # Using Unity Test Framework
 
@@ -28,29 +28,10 @@ This version of the Unity Test Framework is compatible with the following versio
 
 ## Known limitations
 
-Unity Test Framework version 1.0.18 includes the following known limitations:
+Unity Test Framework version 1.3.x includes the following known limitations:
 
 * The `UnityTest` attribute does not support WSA platform.
 * The `UnityTest` attribute does not support [Parameterized tests](https://github.com/nunit/docs/wiki/Parameterized-Tests) (except for `ValueSource`).
 * The `UnityTest` attribute does not support the `NUnit` [Repeat](https://github.com/nunit/docs/wiki/Repeat-Attribute) attribute.
 * Nested test fixture cannot run from the Editor UI. 
 * When using the `NUnit` [Retry](https://github.com/nunit/docs/wiki/Retry-Attribute) attribute in PlayMode tests, it throws `InvalidCastException`.
-* Async tests are not supported in the current version of UTF.
-
-## Package contents
-
-The following table indicates the root folders in the package where you can find useful resources:
-
-| Location                                   | Description                                 |
-| :----------------------------------------- | :------------------------------------------ |
-| _/com.unity.test-framework/Documentation~_ | Contains the documentation for the package. |
-
-## Document revision history
-
-| Date         | Reason                                                |
-| :----------- | :---------------------------------------------------- |
-| February 4, 2021 | Applied user feedback to the documentation. Matches package version 1.1.22 |
-| August 23, 2019 | Applied feedback to the documentation |
-| July 25, 2019 | Documentation updated to include features in version 1.1.0 |
-| July 11, 2019 | Documentation updated. Matches package version 1.0.18 |
-| May 27, 2019 | Documentation created. Matches package version 1.0.14 |

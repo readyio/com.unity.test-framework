@@ -12,12 +12,19 @@ namespace UnityEditor.TestTools.TestRunner.UnityTestProtocol
         static UnityTestProtocolStarter()
         {
             var commandLineArgs = Environment.GetCommandLineArgs();
-            if (commandLineArgs.Contains("-automated") && commandLineArgs.Contains("-runTests")) // wanna have it only for utr run
+            //Ensuring that it is used only when tests are run using UTR.
+            if (IsEnabled())
             {
                 var api = ScriptableObject.CreateInstance<TestRunnerApi>();
                 var listener = new UnityTestProtocolListener(GetRepositoryPath(commandLineArgs));
                 api.RegisterCallbacks(listener);
             }
+        }
+
+        internal static bool IsEnabled()
+        {
+            var commandLineArgs = Environment.GetCommandLineArgs();
+            return commandLineArgs.Contains("-automated") && commandLineArgs.Contains("-runTests");
         }
 
         private static string GetRepositoryPath(IReadOnlyList<string> commandLineArgs)

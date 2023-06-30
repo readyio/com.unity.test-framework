@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using UnityEditor.SceneManagement;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
+using UnityEngine.TestRunner.NUnitExtensions.Runner;
 using UnityEngine.TestTools;
 
 namespace UnityEditor.TestTools.TestRunner.GUI
@@ -85,7 +85,7 @@ namespace UnityEditor.TestTools.TestRunner.GUI
             base.PrintHeadPanel();
 
             PlayerMenuItem[] menuItems;
-            
+
             if (EditorUserBuildSettings.installInBuildFolder)
             {
                 menuItems = new []
@@ -187,11 +187,8 @@ namespace UnityEditor.TestTools.TestRunner.GUI
         {
             foreach (var filter in filters)
             {
-                filter.ClearResults(newResultList.OfType<UITestRunnerFilter.IClearableResult>().ToList());                
+                filter.ClearResults(newResultList.OfType<UITestRunnerFilter.IClearableResult>().ToList());
             }
-
-            RerunCallbackData.instance.runFilters = filters;
-            RerunCallbackData.instance.testMode = TestMode.PlayMode;
 
             var testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
             testRunnerApi.Execute(new ExecutionSettings()
@@ -235,7 +232,7 @@ namespace UnityEditor.TestTools.TestRunner.GUI
 
         protected override bool IsBusy()
         {
-            return TestRunnerApi.IsRunActive() || PlaymodeLauncher.IsRunning  || EditorApplication.isCompiling || EditorApplication.isPlaying;
+            return TestRunnerApi.IsRunActive() || EditorApplication.isCompiling || EditorApplication.isPlaying;
         }
     }
 }

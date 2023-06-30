@@ -1,6 +1,7 @@
 using System;
-using UnityEngine;
 using System.Net;
+using UnityEditor.Build;
+using UnityEngine;
 
 namespace UnityEditor.TestTools.TestRunner
 {
@@ -11,14 +12,14 @@ namespace UnityEditor.TestTools.TestRunner
         [SerializeField]
         private bool m_Stripping;
 
-        bool RequiresLegacyConnectionMechanism =>
+        private bool RequiresLegacyConnectionMechanism =>
 #if !UNITY_2021_2_OR_NEWER
              true;
 #else
             false;
 #endif
 
-        void PerformLegacySetup()
+        private void PerformLegacySetup()
         {
             m_oldDeviceSocketAddress = EditorUserBuildSettings.androidDeviceSocketAddress;
 
@@ -29,12 +30,12 @@ namespace UnityEditor.TestTools.TestRunner
             }
         }
 
-        void PerformLegacyCleanup()
+        private void PerformLegacyCleanup()
         {
             EditorUserBuildSettings.androidDeviceSocketAddress = m_oldDeviceSocketAddress;
         }
 
-        void PerformLegacyPostSuccessfulLaunchAction()
+        private void PerformLegacyPostSuccessfulLaunchAction()
         {
             var connectionResult = -1;
             var maxTryCount = 10;
@@ -57,9 +58,13 @@ namespace UnityEditor.TestTools.TestRunner
 
         public void Setup()
         {
+#if UNITY_2021_1_OR_NEWER            
+            m_oldApplicationIdentifier = PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android);
+#else 
             m_oldApplicationIdentifier = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android);
+#endif
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.UnityTestRunner.UnityTestRunner");
-
+            
             if (RequiresLegacyConnectionMechanism)
                 PerformLegacySetup();
 
@@ -87,8 +92,11 @@ namespace UnityEditor.TestTools.TestRunner
         {
             if (RequiresLegacyConnectionMechanism)
                 PerformLegacyCleanup();
-
+#if UNITY_2021_1_OR_NEWER 
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, m_oldApplicationIdentifier);
+#else
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, m_oldApplicationIdentifier);
+#endif
         }
     }
 }

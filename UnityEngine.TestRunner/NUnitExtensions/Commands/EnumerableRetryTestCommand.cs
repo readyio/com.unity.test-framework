@@ -12,10 +12,10 @@ namespace UnityEngine.TestTools
     internal class EnumerableRetryTestCommand : DelegatingTestCommand, IEnumerableTestMethodCommand
     {
         private int retryCount;
-        
+
         public EnumerableRetryTestCommand(RetryAttribute.RetryCommand commandToReplace) : base(commandToReplace.GetInnerCommand())
         {
-            retryCount = (int) typeof(RetryAttribute.RetryCommand)
+            retryCount = (int)typeof(RetryAttribute.RetryCommand)
                 .GetField("_retryCount", BindingFlags.NonPublic | BindingFlags.Instance)
                 .GetValue(commandToReplace);
         }
@@ -28,10 +28,6 @@ namespace UnityEngine.TestTools
         public IEnumerable ExecuteEnumerable(ITestExecutionContext context)
         {
             var unityContext = (UnityTestExecutionContext)context;
-            if (unityContext.EnumerableTestState?.GetHashCode() == null)
-            {
-                unityContext.EnumerableTestState = new EnumerableTestState();
-            }
             int count = unityContext.EnumerableTestState.Retry;
             var firstCycleAfterResume = count > 0;
 
@@ -45,7 +41,7 @@ namespace UnityEngine.TestTools
                 firstCycleAfterResume = false;
 
                 unityContext.EnumerableTestState.Retry = count;
-                
+
                 if (innerCommand is IEnumerableTestMethodCommand)
                 {
                     var executeEnumerable = ((IEnumerableTestMethodCommand)innerCommand).ExecuteEnumerable(context);

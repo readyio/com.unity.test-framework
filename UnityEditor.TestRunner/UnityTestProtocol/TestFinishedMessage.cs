@@ -1,3 +1,5 @@
+using System;
+
 namespace UnityEditor.TestTools.TestRunner.UnityTestProtocol
 {
     internal class TestFinishedMessage : Message
@@ -10,6 +12,7 @@ namespace UnityEditor.TestTools.TestRunner.UnityTestProtocol
         public string stackTrace;
         public string fileName;
         public int lineNumber;
+        public int iteration;
 
         public TestFinishedMessage()
         {

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
+using UnityEngine;
 using UnityEngine.TestRunner.NUnitExtensions;
 using UnityEngine.TestRunner.NUnitExtensions.Runner;
 using UnityEngine.TestRunner.TestLaunchers;
+using UnityEngine.TestTools;
 using UnityEngine.TestTools.Utils;
 
 namespace UnityEditor.TestTools.TestRunner.Api
@@ -32,11 +33,12 @@ namespace UnityEditor.TestTools.TestRunner.Api
             }
             else
             {
-                TestCaseTimeout = CoroutineRunner.k_DefaultTimeout;
+                TestCaseTimeout = TimeoutCommand.k_DefaultTimeout;
             }
 
             TypeInfo = test.TypeInfo;
             Method = test.Method;
+            Arguments = test is TestMethod testMethod ? testMethod.parms?.Arguments : (test as TestSuite)?.Arguments;
             Categories = test.GetAllCategoriesFromTest().Distinct().ToArray();
             IsTestAssembly = test is TestAssembly;
             RunState = (RunState)Enum.Parse(typeof(RunState), test.RunState.ToString());
@@ -48,12 +50,10 @@ namespace UnityEditor.TestTools.TestRunner.Api
             ParentUniqueName = test.GetParentUniqueName();
             ChildIndex = childIndex;
             
-            if (test.Parent != null)
+            var testPlatform = test.Properties.Get("platform");
+            if (testPlatform is TestPlatform platform)
             {
-                if (test.Parent.Parent == null) // Assembly level
-                {
-                    TestMode = (TestMode)Enum.Parse(typeof(TestMode),test.Properties.Get("platform").ToString());        
-                }
+                TestMode = PlatformToTestMode(platform);
             }
 
             Children = children;
@@ -100,6 +100,21 @@ namespace UnityEditor.TestTools.TestRunner.Api
             }
         }
 
+        private static TestMode PlatformToTestMode(TestPlatform testPlatform)
+        {
+            switch (testPlatform)
+            {
+                case TestPlatform.All:
+                    return TestMode.EditMode | TestMode.PlayMode;
+                case TestPlatform.EditMode:
+                    return TestMode.EditMode;
+                case TestPlatform.PlayMode:
+                    return TestMode.PlayMode;
+                default:
+                    return default;
+            }
+        }
+
         public string Id { get; private set; }
         public string Name { get; private set; }
         public string FullName { get; private set; }
@@ -111,6 +126,7 @@ namespace UnityEditor.TestTools.TestRunner.Api
         public int TestCaseTimeout { get; private set; }
         public ITypeInfo TypeInfo { get; private set; }
         public IMethodInfo Method { get; private set; }
+        public object[] Arguments { get; }
         private string[] m_ChildrenIds;
         public string[] Categories { get; private set; }
         public bool IsTestAssembly { get; private set; }
