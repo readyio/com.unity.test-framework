@@ -10,7 +10,7 @@ The following async attributes have been added to support async tests:
   
 - `AsyncOneTimeTearDown`: This attribute is used to mark a method that is called once after all the tests in a test class have run. This can be used for async cleanup operations that need to be performed once per class, such as async disposal of resources or any other async cleanup code.
 
-- `AsyncTest`: This attribute is used to mark a method to be used as a test. The marked method can be an async method and the testing framework will correctly wait for it to complete before marking the test as finished.
+- `Test`: This attribute is used to mark a method to be used as a test. The marked method can be an async method and the testing framework will correctly wait for it to complete before marking the test as finished.
 
 - `AsyncSetUp`: This attribute is used to mark a method that is called before each test is run. This can be used for async setup operations that need to be performed before each test, such as async initialization of test data.
 
