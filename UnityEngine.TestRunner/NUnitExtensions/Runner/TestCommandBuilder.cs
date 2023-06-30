@@ -26,13 +26,13 @@ namespace UnityEngine.TestRunner.NUnitExtensions.Runner
             var testReturnsTask = test.Method.ReturnType.Type == typeof(Task);
 
             TestCommand command;
-            if (testReturnsIEnumerator)
+            if (testReturnsTask)
             {
                 command = new TaskTestMethodCommand(test);
             }
-            else if (testReturnsTask)
+            else if (testReturnsIEnumerator)
             {
-                command = new AsyncTestMethodCommand(test);
+                command = new EnumerableTestMethodCommand(test);
             }
             else
             {
